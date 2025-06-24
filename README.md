@@ -2,8 +2,7 @@
 
 An interactive dashboard built with Python, Streamlit, and Plotly to visualize and analyze global attacks on education from 2020 to 2025. This project uses the ["Education in Danger Incident Data 2020 to 2025"](https://www.kaggle.com/datasets/mohamedramadan2040/education-in-danger-incident-data-2020-to2025) dataset from Kaggle.
 
-![Dashboard Screenshot](https://i.imgur.com/your-screenshot-url.png)
-*(Recommendation: Run the dashboard and take a screenshot, then upload it to a site like Imgur and paste the link here.)*
+🚀 **[View Live Dashboard](https://education-danger-dashboard.streamlit.app/)**
 
 ---
 
@@ -35,7 +34,7 @@ Follow these steps to run the dashboard on your local machine.
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/education-danger-dashboard.git](https://github.com/your-username/education-danger-dashboard.git)
+git clone [https://github.com/igorservo159/education-danger-dashboard.git](https://github.com/igorservo159/education-danger-dashboard.git)
 cd education-danger-dashboard
 ```
 
