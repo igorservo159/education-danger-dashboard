@@ -49,9 +49,7 @@ st.markdown("---")
 st.subheader("Mapa de Distribuição de Incidentes")
 
 if not df_filtered.empty:
-    # --- MUDANÇA 2: MELHORANDO AS CORES DO MAPA ---
     # Usamos uma escala logarítmica para dar mais destaque a valores menores.
-    # np.log1p(x) é o mesmo que np.log(1+x), para evitar erros com valores zero.
     df_plot = df_filtered.copy()
     df_plot['Log Victims'] = np.log1p(df_plot['Total Victims'])
 
@@ -59,12 +57,12 @@ if not df_filtered.empty:
         df_plot,
         lat="Latitude",
         lon="Longitude",
-        color="Log Victims",  # Cor baseada na escala logarítmica
+        color="Log Victims",
         hover_name="Country",
         projection="natural earth",
-        # No hover, mostramos o número real de vítimas
         hover_data={"Admin 1": True, "Total Victims": True, "Log Victims": False},
-        color_continuous_scale=px.colors.sequential.Plasma, # Uma escala de cores mais vibrante
+        color_continuous_scale=px.colors.sequential.Plasma,
+        # VERIFIQUE SE ESTA LINHA TEM ASPAS NO INÍCIO E NO FIM
         title="A cor representa a intensidade de vítimas (escala logarítmica)"
     )
     
@@ -76,7 +74,7 @@ if not df_filtered.empty:
     
     fig_map.update_layout(
         height=500,
-        margin={"r":0,"t":40,"l":0,"b":0"},
+        margin={"r":0,"t":40,"l":0,"b":0},
         dragmode=False 
     )
     
