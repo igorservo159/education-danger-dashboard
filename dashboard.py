@@ -68,7 +68,7 @@ if not df_filtered.empty:
     df_plot = df_filtered.copy()
     # Se 'Total Victims' for 0, usa 0.5. Caso contrário, usa o valor real.
     # Isso garante que todos os pontos sejam visíveis.
-    df_plot['Marker Size'] = np.where(df_plot['Total Victims'] == 0, 2, df_plot['Total Victims'])
+    df_plot['Marker Size'] = np.where(df_plot['Total Victims'] == 0, 4, df_plot['Total Victims'])
 
     fig_map = px.scatter_mapbox(
         df_plot, # Usamos o novo dataframe df_plot
