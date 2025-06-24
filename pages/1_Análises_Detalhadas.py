@@ -23,6 +23,26 @@ selected_countries_details = st.sidebar.multiselect(
 )
 df_filtered = df[df['Country'].isin(selected_countries_details)]
 
+# --- GRÁFICOS MOVIDOS PARA CÁ ---
+st.markdown("### Rankings Principais")
+col_paises, col_perps = st.columns(2)
+
+with col_paises:
+    st.markdown("##### Top 10 Países por Incidentes")
+    if not df_filtered.empty:
+        country_counts = df_filtered['Country'].value_counts().head(10).sort_values()
+        fig = px.bar(country_counts, x=country_counts.values, y=country_counts.index, orientation='h', text_auto=True)
+        fig.update_layout(yaxis_title=None, xaxis_title="Nº de Incidentes", showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+with col_perps:
+    st.markdown("##### Top 10 Perpetradores por Incidentes")
+    if not df_filtered.empty:
+        perp_counts = df_filtered['Reported Perpetrator'].value_counts().head(10).sort_values()
+        fig = px.bar(perp_counts, x=perp_counts.values, y=perp_counts.index, orientation='h', text_auto=True)
+        fig.update_layout(yaxis_title=None, xaxis_title="Nº de Incidentes", showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
 # --- Layout dos Gráficos ---
 
 # GRÁFICOS QUE FALTAVAM
@@ -88,3 +108,32 @@ if not df_filtered.empty:
     fig_cross = px.bar(crosstab_norm, orientation='h', text_auto='.2f', title="Proporção de Perpetradores por País (%)")
     fig_cross.update_layout(xaxis_title="Percentual de Incidentes (%)", yaxis_title="País", legend_title="Perpetrador")
     st.plotly_chart(fig_cross, use_container_width=True)
+
+st.markdown("---")
+st.markdown("### Análise Regional: América do Sul")
+st.markdown("Incidentes registrados nos países da América do Sul (com base nos filtros de país selecionados).")
+
+# Lista de países da América do Sul
+paises_sul_americanos = [
+    'Argentina', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Ecuador',
+    'Guyana', 'Paraguay', 'Peru', 'Suriname', 'Uruguay', 'Venezuela'
+]
+
+# Filtra o DF já filtrado pela barra lateral para incluir apenas países sul-americanos
+df_america_sul = df_filtered[df_filtered['Country'].isin(paises_sul_americanos)]
+
+# Contar os incidentes por país
+contagem_america_sul = df_america_sul['Country'].value_counts()
+
+if not contagem_america_sul.empty:
+    fig_sa = px.bar(
+        contagem_america_sul,
+        x=contagem_america_sul.index,
+        y=contagem_america_sul.values,
+        text_auto=True,
+        title="Incidentes na América do Sul"
+    )
+    fig_sa.update_layout(xaxis_title="País", yaxis_title="Número de Incidentes")
+    st.plotly_chart(fig_sa, use_container_width=True)
+else:
+    st.warning("Nenhum incidente registrado na América do Sul para os países selecionados no filtro.")
