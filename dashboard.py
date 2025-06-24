@@ -52,11 +52,14 @@ def load_data():
     return df_clean
 
 # Carrega os dados usando a função cacheada
+
 try:
     df = load_data()
 except Exception as e:
-    st.error(f"Erro ao carregar os dados do Kaggle. Verifique sua chave de API 'kaggle.json'.")
-    st.error(f"Detalhe do erro: {e}")
+    # Mostra uma mensagem geral e em seguida o erro técnico exato.
+    st.error("Ocorreu um erro ao carregar e processar os dados.")
+    st.error(f"Detalhe técnico do erro: {e}")
+    st.info("Verifique se todas as dependências no `requirements.txt` estão corretas (como `openpyxl` para ler arquivos Excel) e se suas credenciais do Kaggle nos Secrets estão válidas.")
     st.stop()
 
 
