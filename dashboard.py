@@ -70,10 +70,18 @@ st.sidebar.header("Filtros Interativos")
 # Filtro de País (Multiseleção)
 # Pega os países únicos e ordena
 paises_sorted = sorted(df['Country'].unique())
+
+# Define a lista de países que gostaríamos de ter como padrão
+paises_default_desejados = ["Ukraine", "Myanmar", "OPT", "Nigeria"]
+
+# Cria a lista de defaults válidos, checando quais dos desejados realmente existem nos dados
+paises_default_validos = [p for p in paises_default_desejados if p in paises_sorted]
+
+# Usa a lista de defaults válidos no widget
 selected_countries = st.sidebar.multiselect(
     "Selecione o(s) País(es)",
     options=paises_sorted,
-    default=["Ukraine", "Myanmar", "OPT", "Nigeria"] # Padrão para visualização inicial
+    default=paises_default_validos # Usa a nova lista robusta
 )
 
 # Filtro de Ano (Slider de intervalo)
