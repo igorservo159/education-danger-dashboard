@@ -1,9 +1,9 @@
-# dashboard.py (Versão Final com Tamanho Mínimo para Marcadores)
+# dashboard.py (Versão Final com Tamanho Mín=5 e Máx=50)
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import numpy as np # Adicionado para usar funções do numpy
+import numpy as np
 from data_loader import load_data 
 
 st.set_page_config(layout="wide", page_title="Visão Geral | Educação em Perigo")
@@ -54,7 +54,6 @@ st.subheader("Mapa Interativo de Incidentes")
 st.markdown("Use o scroll do mouse para dar zoom e clique e arraste para navegar.")
 
 if not df_filtered.empty:
-    # LÓGICA PARA CENTRALIZAÇÃO E ZOOM DINÂMICOS
     if selected_countries:
         center_lat = df_filtered.iloc[0]['Latitude']
         center_lon = df_filtered.iloc[0]['Longitude']
@@ -64,22 +63,20 @@ if not df_filtered.empty:
         center_lon = 10
         zoom_level = 2
 
-    # --- MUDANÇA AQUI: Criando a coluna de tamanho mínimo ---
     df_plot = df_filtered.copy()
-    # Se 'Total Victims' for 0, usa 0.5. Caso contrário, usa o valor real.
-    # Isso garante que todos os pontos sejam visíveis.
-    df_plot['Marker Size'] = np.where(df_plot['Total Victims'] == 0, 4, df_plot['Total Victims'])
+    # MUDANÇA 1: O tamanho base para 0 vítimas agora é 5.
+    df_plot['Marker Size'] = np.where(df_plot['Total Victims'] == 0, 5, df_plot['Total Victims'])
 
     fig_map = px.scatter_mapbox(
-        df_plot, # Usamos o novo dataframe df_plot
+        df_plot,
         lat="Latitude",
         lon="Longitude",
         color="Total Victims",
-        size="Marker Size", # Usamos a nova coluna para o tamanho
+        size="Marker Size",
         hover_name="Country",
         hover_data={"Admin 1": True, "Total Victims": True, "Year": True},
         color_continuous_scale=px.colors.sequential.Plasma,
-        size_max=40,
+        size_max=50, # MUDANÇA 2: O tamanho máximo do maior ponto agora é 50.
         zoom=zoom_level
     )
     
