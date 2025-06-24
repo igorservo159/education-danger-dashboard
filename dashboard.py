@@ -1,8 +1,9 @@
-# dashboard.py (Versão Final com Zoom Padrão Melhorado)
+# dashboard.py (Versão Final com Tamanho Mínimo para Marcadores)
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np # Adicionado para usar funções do numpy
 from data_loader import load_data 
 
 st.set_page_config(layout="wide", page_title="Visão Geral | Educação em Perigo")
@@ -59,17 +60,22 @@ if not df_filtered.empty:
         center_lon = df_filtered.iloc[0]['Longitude']
         zoom_level = 3
     else: 
-        # MUDANÇA AQUI: Ajustamos o centro e o zoom para a visão global
-        center_lat = 25  # Um pouco mais ao norte para centralizar melhor Europa/Ásia/África
+        center_lat = 25
         center_lon = 10
-        zoom_level = 2   # Zoom padrão aumentado de 1.5 para 2
+        zoom_level = 2
+
+    # --- MUDANÇA AQUI: Criando a coluna de tamanho mínimo ---
+    df_plot = df_filtered.copy()
+    # Se 'Total Victims' for 0, usa 0.5. Caso contrário, usa o valor real.
+    # Isso garante que todos os pontos sejam visíveis.
+    df_plot['Marker Size'] = np.where(df_plot['Total Victims'] == 0, 0.5, df_plot['Total Victims'])
 
     fig_map = px.scatter_mapbox(
-        df_filtered,
+        df_plot, # Usamos o novo dataframe df_plot
         lat="Latitude",
         lon="Longitude",
         color="Total Victims",
-        size="Total Victims",
+        size="Marker Size", # Usamos a nova coluna para o tamanho
         hover_name="Country",
         hover_data={"Admin 1": True, "Total Victims": True, "Year": True},
         color_continuous_scale=px.colors.sequential.Plasma,
