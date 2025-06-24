@@ -3,3 +3,4 @@ plotly
 kagglehub
 streamlit
 openpyxl
+numpy

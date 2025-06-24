@@ -1,9 +1,8 @@
-# dashboard.py (Página Principal: Visão Geral - ATUALIZADO)
+# dashboard.py (Solução Definitiva com Plotly + OpenStreetMap)
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import numpy as np  # Importamos numpy para a escala logarítmica
 from data_loader import load_data 
 
 st.set_page_config(layout="wide", page_title="Visão Geral | Educação em Perigo")
@@ -11,7 +10,7 @@ st.set_page_config(layout="wide", page_title="Visão Geral | Educação em Perig
 try:
     df = load_data()
 except Exception as e:
-    st.error("Ocorreu um erro ao carregar os dados.")
+    st.error("Ocorreu um erro ao carregar e processar os dados.")
     st.error(f"Detalhe técnico do erro: {e}")
     st.stop()
 
@@ -46,36 +45,30 @@ col2.metric("Total de Vítimas", f"{int(df_filtered['Total Victims'].sum()):,}")
 col3.metric("Países Afetados", f"{df_filtered['Country'].nunique()}")
 
 st.markdown("---")
-st.subheader("Mapa de Distribuição de Incidentes")
+st.subheader("Mapa Interativo de Incidentes")
+st.markdown("Use o scroll do mouse para dar zoom e clique e arraste para navegar.")
 
 if not df_filtered.empty:
-    # Usamos uma escala logarítmica para dar mais destaque a valores menores.
-    df_plot = df_filtered.copy()
-    df_plot['Log Victims'] = np.log1p(df_plot['Total Victims'])
-
-    fig_map = px.scatter_geo(
-        df_plot,
+    # Usamos px.scatter_mapbox, mas com um estilo que não requer token da Mapbox
+    fig_map = px.scatter_mapbox(
+        df_filtered,
         lat="Latitude",
         lon="Longitude",
-        color="Log Victims",
+        color="Total Victims",          # Cor baseada no número real de vítimas
+        size="Total Victims",           # O tamanho dos círculos também representa as vítimas
         hover_name="Country",
-        projection="natural earth",
-        hover_data={"Admin 1": True, "Total Victims": True, "Log Victims": False},
-        color_continuous_scale=px.colors.sequential.Plasma,
-        # VERIFIQUE SE ESTA LINHA TEM ASPAS NO INÍCIO E NO FIM
-        title="A cor representa a intensidade de vítimas (escala logarítmica)"
-    )
-    
-    fig_map.update_geos(
-        visible=True, 
-        resolution=110,
-        showcountries=True, landcolor="#F0F0F0", countrycolor="darkgray"
+        hover_data={"Admin 1": True, "Total Victims": True, "Year": True},
+        color_continuous_scale=px.colors.sequential.Plasma, # Escala de cores vibrante
+        size_max=50,  # Define o tamanho máximo dos círculos
+        zoom=1.5 # Nível de zoom inicial
     )
     
     fig_map.update_layout(
-        height=500,
-        margin={"r":0,"t":40,"l":0,"b":0},
-        dragmode=False 
+        # AQUI ESTÁ A "MÁGICA": Usamos o mapa gratuito do OpenStreetMap como fundo.
+        # Nenhuma chamada à API do Mapbox é feita, portanto, nenhum token é necessário.
+        mapbox_style="open-street-map", 
+        height=600,
+        margin={"r":0,"t":20,"l":0,"b":0}
     )
     
     st.plotly_chart(fig_map, use_container_width=True)
