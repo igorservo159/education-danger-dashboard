@@ -1,4 +1,4 @@
-# dashboard.py (Solução Definitiva com Plotly + OpenStreetMap)
+# dashboard.py (Versão Final com Zoom Padrão Melhorado)
 
 import streamlit as st
 import pandas as pd
@@ -20,7 +20,7 @@ st.markdown("Use o menu à esquerda para navegar entre a **Visão Geral** e as *
 
 st.sidebar.header("Filtros para Visão Geral")
 paises_sorted = sorted(df['Country'].unique())
-paises_default_desejados = ["Ukraine", "Myanmar", "OPT", "Nigeria"]
+paises_default_desejados = ["Nigeria"] 
 paises_default_validos = [p for p in paises_default_desejados if p in paises_sorted]
 selected_countries = st.sidebar.multiselect(
     "Selecione o(s) País(es)", options=paises_sorted, default=paises_default_validos
@@ -34,6 +34,9 @@ selected_year_range = st.sidebar.slider(
 query_parts = []
 if selected_countries:
     query_parts.append(f"Country in @selected_countries")
+else: 
+    query_parts.append("Country == Country")
+
 query_parts.append(f"Year >= {selected_year_range[0]} and Year <= {selected_year_range[1]}")
 full_query = " and ".join(query_parts)
 df_filtered = df.query(full_query)
@@ -44,29 +47,39 @@ col1.metric("Total de Incidentes", f"{len(df_filtered):,}")
 col2.metric("Total de Vítimas", f"{int(df_filtered['Total Victims'].sum()):,}")
 col3.metric("Países Afetados", f"{df_filtered['Country'].nunique()}")
 
+
 st.markdown("---")
 st.subheader("Mapa Interativo de Incidentes")
 st.markdown("Use o scroll do mouse para dar zoom e clique e arraste para navegar.")
 
 if not df_filtered.empty:
-    # Usamos px.scatter_mapbox, mas com um estilo que não requer token da Mapbox
+    # LÓGICA PARA CENTRALIZAÇÃO E ZOOM DINÂMICOS
+    if selected_countries:
+        center_lat = df_filtered.iloc[0]['Latitude']
+        center_lon = df_filtered.iloc[0]['Longitude']
+        zoom_level = 3
+    else: 
+        # MUDANÇA AQUI: Ajustamos o centro e o zoom para a visão global
+        center_lat = 25  # Um pouco mais ao norte para centralizar melhor Europa/Ásia/África
+        center_lon = 10
+        zoom_level = 2   # Zoom padrão aumentado de 1.5 para 2
+
     fig_map = px.scatter_mapbox(
         df_filtered,
         lat="Latitude",
         lon="Longitude",
-        color="Total Victims",          # Cor baseada no número real de vítimas
-        size="Total Victims",           # O tamanho dos círculos também representa as vítimas
+        color="Total Victims",
+        size="Total Victims",
         hover_name="Country",
         hover_data={"Admin 1": True, "Total Victims": True, "Year": True},
-        color_continuous_scale=px.colors.sequential.Plasma, # Escala de cores vibrante
-        size_max=50,  # Define o tamanho máximo dos círculos
-        zoom=1.5 # Nível de zoom inicial
+        color_continuous_scale=px.colors.sequential.Plasma,
+        size_max=40,
+        zoom=zoom_level
     )
     
     fig_map.update_layout(
-        # AQUI ESTÁ A "MÁGICA": Usamos o mapa gratuito do OpenStreetMap como fundo.
-        # Nenhuma chamada à API do Mapbox é feita, portanto, nenhum token é necessário.
         mapbox_style="open-street-map", 
+        mapbox_center={"lat": center_lat, "lon": center_lon},
         height=600,
         margin={"r":0,"t":20,"l":0,"b":0}
     )
