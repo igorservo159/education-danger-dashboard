@@ -5,3 +5,4 @@ streamlit
 openpyxl
 numpy
 scikit-learn>=1.0.0
+kmodes

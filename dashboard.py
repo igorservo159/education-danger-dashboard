@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from data_loader import load_data, aplicar_clustering
+from data_loader import load_data, aplicar_clustering, avaliar_clustering
 
 st.set_page_config(layout="wide", page_title="Visão Geral | Educação em Perigo")
 
@@ -50,7 +50,7 @@ usar_clustering = st.sidebar.checkbox("Ativar Clustering")
 if usar_clustering:
     estrategia = st.sidebar.selectbox(
         "Estratégia de Clustering",
-        options=["perfil_perpetrador", "impacto_vitimas"],
+        options=["impacto_vitimas", "perfil_perpetrador"],
         format_func=lambda x: {
             "perfil_perpetrador": "Por Tipo de Perpetrador, Arma e Região",
             "impacto_vitimas": "Por Vítimas, Sequestros, Prisões e Violência Sexual"
@@ -61,6 +61,19 @@ if usar_clustering:
     try:
         df_filtered = aplicar_clustering(df_filtered, estrategia=estrategia, n_clusters=num_clusters)
         df_filtered['Cluster'] = df_filtered['Cluster'].astype(str)
+
+        if estrategia == "perfil_perpetrador":
+            features_usadas = ["Reported Perpetrator", "Weapon Carried/Used", "Admin 1"]
+            df_encoded = pd.get_dummies(df_filtered[features_usadas])
+        else:
+            features_usadas = [
+                "Total Killed", "Total Injured", "Total Kidnapped",
+                "Total Arrested", "Sexual Violence Affecting School Age Children"
+            ]
+            df_encoded = df_filtered[features_usadas]
+
+        score = avaliar_clustering(df_encoded, df_filtered['Cluster'], df_encoded.columns)
+        st.sidebar.info(f"Silhouette Score: **{score}**")
     except Exception as e:
         st.warning(f"Erro ao aplicar clustering: {e}")
         usar_clustering = False

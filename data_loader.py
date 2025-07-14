@@ -112,6 +112,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.cluster import KMeans
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.metrics import silhouette_score
 
 @st.cache_data
 def load_data():
@@ -155,7 +156,7 @@ def load_data():
     return df_clean
 
 
-def aplicar_clustering(df, estrategia='perfil_perpetrador', n_clusters=4):
+def aplicar_clustering(df, estrategia='impacto_vitimas', n_clusters=4):
     df_cluster = df.copy()
 
     if estrategia == 'perfil_perpetrador':
@@ -180,3 +181,14 @@ def aplicar_clustering(df, estrategia='perfil_perpetrador', n_clusters=4):
     df_cluster['Cluster'] = cluster_labels
 
     return df_cluster
+
+def avaliar_clustering(df, labels, features_usadas):
+    """
+    Calcula o Silhouette Score com base nos dados e rótulos de cluster.
+    """
+    try:
+        score = silhouette_score(df[features_usadas], labels)
+        return round(score, 3)
+    except Exception as e:
+        return f"Erro ao calcular Silhouette Score: {e}"
+
