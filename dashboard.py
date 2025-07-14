@@ -1,13 +1,12 @@
-# dashboard.py (Versão Final com Tamanho Mín=5 e Máx=50)
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from data_loader import load_data 
+from data_loader import load_data, aplicar_clustering
 
 st.set_page_config(layout="wide", page_title="Visão Geral | Educação em Perigo")
 
+# --- Carregamento dos dados ---
 try:
     df = load_data()
 except Exception as e:
@@ -19,6 +18,7 @@ st.title("🌍 Dashboard: Análise de Incidentes na Educação")
 st.markdown("Bem-vindo à análise de dados de incidentes que afetam a educação (2020-2025).")
 st.markdown("Use o menu à esquerda para navegar entre a **Visão Geral** e as **Análises Detalhadas**.")
 
+# --- Filtros principais ---
 st.sidebar.header("Filtros para Visão Geral")
 paises_sorted = sorted(df['Country'].unique())
 paises_default_desejados = ["Nigeria"] 
@@ -32,6 +32,7 @@ selected_year_range = st.sidebar.slider(
     "Selecione o Intervalo de Anos", min_value=min_year, max_value=max_year, value=(min_year, max_year)
 )
 
+# --- Filtro de dados ---
 query_parts = []
 if selected_countries:
     query_parts.append(f"Country in @selected_countries")
@@ -42,13 +43,36 @@ query_parts.append(f"Year >= {selected_year_range[0]} and Year <= {selected_year
 full_query = " and ".join(query_parts)
 df_filtered = df.query(full_query)
 
+# --- Clustering (Agrupamento) ---
+st.sidebar.header("Clustering (Agrupamento)")
+usar_clustering = st.sidebar.checkbox("Ativar Clustering")
+
+if usar_clustering:
+    estrategia = st.sidebar.selectbox(
+        "Estratégia de Clustering",
+        options=["perfil_perpetrador", "impacto_vitimas"],
+        format_func=lambda x: {
+            "perfil_perpetrador": "Por Tipo de Perpetrador, Arma e Região",
+            "impacto_vitimas": "Por Vítimas, Sequestros, Prisões e Violência Sexual"
+        }[x]
+    )
+    num_clusters = st.sidebar.slider("Número de Grupos", 2, 10, 4)
+
+    try:
+        df_filtered = aplicar_clustering(df_filtered, estrategia=estrategia, n_clusters=num_clusters)
+        df_filtered['Cluster'] = df_filtered['Cluster'].astype(str)
+    except Exception as e:
+        st.warning(f"Erro ao aplicar clustering: {e}")
+        usar_clustering = False
+
+# --- Métricas Gerais ---
 st.markdown("### Métricas Gerais (com base nos filtros)")
 col1, col2, col3 = st.columns(3)
 col1.metric("Total de Incidentes", f"{len(df_filtered):,}")
 col2.metric("Total de Vítimas", f"{int(df_filtered['Total Victims'].sum()):,}")
 col3.metric("Países Afetados", f"{df_filtered['Country'].nunique()}")
 
-
+# --- Mapa Interativo ---
 st.markdown("---")
 st.subheader("Mapa Interativo de Incidentes")
 st.markdown("Use o scroll do mouse para dar zoom e clique e arraste para navegar.")
@@ -64,24 +88,42 @@ if not df_filtered.empty:
         zoom_level = 2
 
     df_plot = df_filtered.copy()
-    # MUDANÇA 1: O tamanho base para 0 vítimas agora é 5.
-    df_plot['Marker Size'] = np.where(df_plot['Total Victims'] == 0, 5, df_plot['Total Victims'])
+    df_plot['Marker Size'] = np.where(df_plot['Total Victims'] == 0, 10, df_plot['Total Victims'] + 10)
+
+    hover_cols = {
+        "Admin 1": True,
+        "Reported Perpetrator Name": True,
+        "Weapon Carried/Used": True,
+        "Total Victims": True,
+        "Total Killed": True,
+        "Total Arrested": True,
+        "Total Kidnapped": True,
+        "Total Injured": True,
+        "Sexual Violence Affecting School Age Children": True,
+        "Latitude": False,
+        "Longitude": False,
+        "Marker Size": False,
+    }
+
+    # Só adiciona "Cluster" se existir no DataFrame
+    if usar_clustering and "Cluster" in df_plot.columns:
+        hover_cols["Cluster"] = True
 
     fig_map = px.scatter_mapbox(
         df_plot,
         lat="Latitude",
         lon="Longitude",
-        color="Total Victims",
+        color="Cluster" if usar_clustering and "Cluster" in df_plot.columns else "Total Victims",
         size="Marker Size",
         hover_name="Country",
-        hover_data={"Admin 1": True, "Total Victims": True, "Year": True},
-        color_continuous_scale=px.colors.sequential.Plasma,
-        size_max=50, # MUDANÇA 2: O tamanho máximo do maior ponto agora é 50.
+        hover_data=hover_cols,
+        color_continuous_scale="Viridis" if not usar_clustering else None,
+        size_max=50,
         zoom=zoom_level
     )
-    
+
     fig_map.update_layout(
-        mapbox_style="open-street-map", 
+        mapbox_style="open-street-map",
         mapbox_center={"lat": center_lat, "lon": center_lon},
         height=600,
         margin={"r":0,"t":20,"l":0,"b":0}
@@ -90,3 +132,88 @@ if not df_filtered.empty:
     st.plotly_chart(fig_map, use_container_width=True)
 else:
     st.warning("Nenhum dado disponível para exibir o mapa com os filtros selecionados.")
+
+# --- Gráficos interativos por cluster ---
+if usar_clustering and "Cluster" in df_filtered.columns:
+    st.markdown("---")
+    st.subheader("📊 Análise por Cluster")
+
+    if estrategia == "perfil_perpetrador":
+        st.markdown("**Distribuição de Incidentes por Tipo de Perpetrador e Arma (por Cluster)**")
+        df_perfil = df_filtered.copy()
+        fig_perpetrador = px.histogram(
+            df_perfil,
+            x="Reported Perpetrator",
+            color="Cluster",
+            barmode="group",
+            title="Perpetradores por Cluster",
+            labels={"Reported Perpetrator": "Perpetrador"},
+        )
+        st.plotly_chart(fig_perpetrador, use_container_width=True)
+
+        fig_arma = px.histogram(
+            df_perfil,
+            x="Weapon Carried/Used",
+            color="Cluster",
+            barmode="group",
+            title="Tipo de Arma por Cluster",
+            labels={"Weapon Carried/Used": "Tipo de Arma"},
+        )
+        st.plotly_chart(fig_arma, use_container_width=True)
+
+    elif estrategia == "impacto_vitimas":
+        st.markdown("**Soma dos Impactos por Cluster**")
+        df_impacto = df_filtered.copy()
+        df_impacto_grouped = df_impacto.groupby("Cluster").sum(numeric_only=True).reset_index()
+        df_impacto_grouped = df_impacto_grouped[[
+            "Cluster", "Total Killed", "Total Injured", "Total Kidnapped", "Total Arrested",
+            "Sexual Violence Affecting School Age Children"
+        ]].rename(columns={
+            "Sexual Violence Affecting School Age Children": "Sexual Violence"
+        })
+
+        df_impacto_melted = df_impacto_grouped.melt(
+            id_vars="Cluster",
+            var_name="Categoria",
+            value_name="Total"
+        )
+
+        fig_impacto = px.bar(
+            df_impacto_melted,
+            x="Categoria",
+            y="Total",
+            color="Cluster",
+            barmode="group",
+            title="Comparativo de Impacto por Cluster"
+        )
+        st.plotly_chart(fig_impacto, use_container_width=True)
+
+    # --- Texto explicativo ---
+    st.markdown("---")
+    st.subheader("🧠 Interpretação dos Grupos (Clusters)")
+    st.markdown("""
+O clustering foi aplicado com o objetivo de **identificar padrões latentes** nos incidentes registrados.
+
+### 🎯 Estratégia 1: Perfil dos Perpetradores
+Agrupa os incidentes com base nas **características qualitativas**:
+- **Quem cometeu o ataque**
+- **Qual tipo de arma foi usada**
+- **Local/região administrativa**
+
+Esse agrupamento ajuda a entender **padrões táticos e operacionais** dos ataques. Por exemplo, um cluster pode representar ações militares organizadas, enquanto outro pode refletir violência esporádica em áreas civis.
+
+### 💥 Estratégia 2: Impacto nas Vítimas
+Agrupa incidentes com base em **dados quantitativos**:
+- Mortes, feridos, sequestros, prisões
+- Ocorrência de violência sexual
+
+Esse agrupamento destaca **a severidade dos ataques**, permitindo identificar os clusters mais letais ou violentos. Pode revelar, por exemplo, que certos tipos de ataques (mesmo com poucos eventos) têm impacto desproporcional.
+
+### 💡 Possíveis insights:
+- Regiões com **maior impacto humano** podem demandar mais intervenção humanitária.
+- Certos clusters podem estar ligados a **tipos específicos de perpetradores**, o que facilita estratégias de prevenção.
+- Agrupamentos de baixo impacto podem representar **ameaças latentes**, negligenciadas por parecerem "menos graves".
+
+Essas análises ajudam governos, ONGs e pesquisadores a tomarem **decisões baseadas em dados**.
+""")
+
