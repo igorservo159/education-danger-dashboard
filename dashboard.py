@@ -198,4 +198,29 @@ Esse agrupamento destaca **a severidade dos ataques**, permitindo identificar os
 - Permite traçar **prioridades de resposta** com base no impacto real.
 
 Essas análises ajudam governos, ONGs e pesquisadores a tomarem **decisões baseadas em dados**.
+
+### 🧠 O que é Clustering (Agrupamento)?
+
+Clustering é uma técnica **não supervisionada** que tenta **agrupar dados semelhantes** entre si, sem usar rótulos de verdade. O modelo tenta encontrar **padrões intrínsecos** na distribuição dos dados.
+
+Nesse caso, o clustering tenta responder:
+
+> *"Quais incidentes se parecem entre si com base no impacto sobre as vítimas?"*
+
+### ⚙️ Como funciona o KMeans (que você está usando)
+
+1. Escolhe `k` centróides iniciais (aleatoriamente ou por heurística).
+2. Atribui cada ponto ao centróide mais próximo → forma k grupos.
+3. Atualiza os centróides com base na média dos pontos do grupo.
+4. Repete passos 2 e 3 até:
+    * Os centróides não mudarem muito (convergência).
+    * Ou atingir número máximo de iterações.
+
+### 🔬 O que é o Silhouette Score?
+
+O Silhouette Score mede o quão bem separado e coeso está cada grupo:
+* Varia entre -1 e 1.
+* Próximo de 1.0: os pontos estão bem agrupados e bem separados dos outros grupos.
+* Próximo de 0.0: os grupos estão se sobrepondo.
+* Valor negativo: os pontos estão no grupo errado.
 """)
