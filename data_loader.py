@@ -142,8 +142,8 @@ def load_data():
     df_clean['Year'] = df_clean['Date'].dt.year
     
     victim_cols = [
-        'Educators Killed', 'Educators Injured', 'Educators Kidnapped',
-        'Students Killed', 'Students Injured', 'Students Kidnapped'
+        'Educators Killed', 'Educators Injured', 'Educators Kidnapped', 'Educators Arrested',
+        'Students Killed', 'Students Injured', 'Students Kidnapped', 'Students Arrested'
     ]
     df_clean['Total Victims'] = df_clean[victim_cols].sum(axis=1)
     
@@ -156,21 +156,23 @@ def load_data():
     return df_clean
 
 
-def aplicar_clustering(df, estrategia='impacto_vitimas', n_clusters=4):
+def aplicar_clustering(df, n_clusters=4):
     df_cluster = df.copy()
 
-    if estrategia == 'perfil_perpetrador':
-        features = ['Reported Perpetrator', 'Weapon Carried/Used', 'Admin 1']
-        transformer = ColumnTransformer([
-            ('cat', OneHotEncoder(handle_unknown='ignore'), features),
-        ])
-    elif estrategia == 'impacto_vitimas':
-        features = ['Total Killed', 'Total Injured', 'Total Kidnapped', 'Total Arrested', 'Sexual Violence Affecting School Age Children']
-        transformer = ColumnTransformer([
-            ('num', StandardScaler(), features),
-        ])
-    else:
-        raise ValueError("Estratégia inválida.")
+    # Novas features relativas
+    df_cluster['Pct_Killed'] = df_cluster['Total Killed'] / (df_cluster['Total Victims'] + 1)
+    df_cluster['Pct_Injured'] = df_cluster['Total Injured'] / (df_cluster['Total Victims'] + 1)
+    df_cluster['Pct_Kidnapped'] = df_cluster['Total Kidnapped'] / (df_cluster['Total Victims'] + 1)
+    df_cluster['Pct_Arrested'] = df_cluster['Total Arrested'] / (df_cluster['Total Victims'] + 1)
+    df_cluster['Pct_Sexual'] = df_cluster['Sexual Violence Affecting School Age Children'] / (df_cluster['Total Victims'] + 1)
+
+    features = [
+        'Pct_Killed', 'Pct_Injured', 'Pct_Kidnapped', 'Pct_Arrested', 'Pct_Sexual'
+    ]
+
+    transformer = ColumnTransformer([
+        ('num', StandardScaler(), features),
+    ])
 
     pipeline = Pipeline([
         ('transform', transformer),
